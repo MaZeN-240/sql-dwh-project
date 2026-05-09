@@ -1,2 +1,2 @@
 # sql-dwh-project
-Building a modern data warehouse with PostgreSQL, including ETL Processes, data modeling, and analytics.
+Building a modern data warehouse with PostgreSQL, including ETL Processes, data modeling, and analytics follow-up with Data With Baraa.
