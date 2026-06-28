@@ -4,134 +4,68 @@ DDL Script: Create Bronze Tables
 ===============================================================================
 Script Purpose:
     This script creates tables in the 'bronze' schema, dropping existing tables
-    if they already exist, calculating its loading duration.
+    if they already exist.
     Run this script to re-define the DDL structure of 'bronze' Tables.
 ===============================================================================
 */
-CREATE OR REPLACE PROCEDURE bronze.load_bronze()
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_start_time         TIMESTAMPTZ;
-    v_end_time           TIMESTAMPTZ;
-    v_batch_start_time   TIMESTAMPTZ;
-    v_batch_end_time     TIMESTAMPTZ;
-    row_cnt              INT;
-BEGIN
-    -- Record total batch execution start time
-    v_batch_start_time := CLOCK_TIMESTAMP();
+-- 1. crm_cust_info
+DROP TABLE IF EXISTS bronze.crm_cust_info CASCADE;
+CREATE TABLE bronze.crm_cust_info(
+    cst_id             INT,
+    cst_key            VARCHAR(50),
+    cst_firstname      VARCHAR(50),
+    cst_lastname       VARCHAR(50),
+    cst_marital_status VARCHAR(50), 
+    cst_gender         VARCHAR(50),
+    cst_create_date    DATE
+);
 
-    RAISE NOTICE '==================================================';
-    RAISE NOTICE 'Starting Bronze Layer Load (With Exception Handling)';
-    RAISE NOTICE '==================================================';
+-- 2. crm_prd_info
+DROP TABLE IF EXISTS bronze.crm_prd_info CASCADE;
+CREATE TABLE bronze.crm_prd_info (
+    prd_id        INT,
+    prd_key       VARCHAR(50),
+    prd_nm        VARCHAR(50),
+    prd_cost      INT,
+    prd_line      VARCHAR(50),
+    prd_start_dt  TIMESTAMP,
+    prd_end_dt    TIMESTAMP
+);
 
-    -- =========================================================
-    -- 1. Importing crm_cust_info
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.crm_cust_info CASCADE;
-        
-        COPY bronze.crm_cust_info FROM 'C:\cust_info.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: crm_cust_info | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: crm_cust_info | Error: %', SQLERRM;
-    END;
+-- 3. crm_sales_details
+DROP TABLE IF EXISTS bronze.crm_sales_details CASCADE;
+CREATE TABLE bronze.crm_sales_details (
+    sls_ord_num   VARCHAR(50),
+    sls_prd_key   VARCHAR(50),
+    sls_cust_id   INT,
+    sls_order_dt  INT, 
+    sls_ship_dt   INT,
+    sls_due_dt    INT,
+    sls_sales     INT,
+    sls_quantity  INT,
+    sls_price     INT
+);
 
-    -- =========================================================
-    -- 2. Importing crm_prd_info
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.crm_prd_info CASCADE;
-        
-        COPY bronze.crm_prd_info FROM 'C:\prd_info.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: crm_prd_info | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: crm_prd_info | Error: %', SQLERRM;
-    END;
+-- 4. erp_loc_a101
+DROP TABLE IF EXISTS bronze.erp_loc_a101 CASCADE;
+CREATE TABLE bronze.erp_loc_a101 (
+    cid           VARCHAR(50),
+    cntry         VARCHAR(50)
+);
 
-    -- =========================================================
-    -- 3. Importing crm_sales_details
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.crm_sales_details CASCADE;
-        
-        COPY bronze.crm_sales_details FROM 'C:\sales_details.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: crm_sales_details | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: crm_sales_details | Error: %', SQLERRM;
-    END;
+-- 5. erp_cust_az12
+DROP TABLE IF EXISTS bronze.erp_cust_az12 CASCADE;
+CREATE TABLE bronze.erp_cust_az12 (
+    cid           VARCHAR(50),
+    bdate         DATE,
+    gen           VARCHAR(50)
+);
 
-    -- =========================================================
-    -- 4. Importing erp_cust_az12
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.erp_cust_az12 CASCADE;
-        
-        COPY bronze.erp_cust_az12 FROM 'C:\CUST_AZ12.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: erp_cust_az12 | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: erp_cust_az12 | Error: %', SQLERRM;
-    END;
-
-    -- =========================================================
-    -- 5. Importing erp_loc_a101
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.erp_loc_a101 CASCADE;
-        
-        COPY bronze.erp_loc_a101 FROM 'C:\LOC_A101.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: erp_loc_a101 | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: erp_loc_a101 | Error: %', SQLERRM;
-    END;
-
-    -- =========================================================
-    -- 6. Importing erp_px_cat_g1v2
-    -- =========================================================
-    BEGIN
-        v_start_time := CLOCK_TIMESTAMP();
-        TRUNCATE TABLE bronze.erp_px_cat_g1v2 CASCADE;
-        
-        COPY bronze.erp_px_cat_g1v2 FROM 'C:\PX_CAT_G1V2.csv' DELIMITER ',' CSV HEADER;
-        
-        GET DIAGNOSTICS row_cnt = ROW_COUNT;
-        v_end_time := CLOCK_TIMESTAMP();
-        RAISE NOTICE '>> SUCCESS: erp_px_cat_g1v2 | Rows: % | Duration: % seconds', 
-                     row_cnt, EXTRACT(EPOCH FROM (v_end_time - v_start_time));
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE '>> FAILED: erp_px_cat_g1v2 | Error: %', SQLERRM;
-    END;
-
-    -- Record total batch execution end time
-    v_batch_end_time := CLOCK_TIMESTAMP();
-    RAISE NOTICE '==================================================';
-    RAISE NOTICE 'Total Batch Duration: % seconds', EXTRACT(EPOCH FROM (v_batch_end_time - v_batch_start_time));
-    RAISE NOTICE '==================================================';
-
-END;
-$$;
+-- 6. erp_px_cat_g1v2
+DROP TABLE IF EXISTS bronze.erp_px_cat_g1v2 CASCADE;
+CREATE TABLE bronze.erp_px_cat_g1v2 (
+    id            VARCHAR(50),
+    cat           VARCHAR(50),
+    subcat        VARCHAR(50),
+    maintenance   VARCHAR(50)
+);
